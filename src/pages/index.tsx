@@ -159,7 +159,7 @@ const mergeSort = async (listToSort:Array<number>, setListToSort:any, setSelecte
 const randomIntList = (n:number, max:number=1000):Array<number> => {
   let list = []
   for (let i = 1; i < n + 1; i++) {
-    list.push(i * 5);
+    list.push(i);
   }
   return list;
 }
@@ -179,7 +179,7 @@ const Cell = (props:any) => {
       layout
       transition={{layout: {type: 'just', stiffness: 50, duration: 0.1}, backgroundColor: {type: 'just', duration: 0.001}}}
       className='bg-slate-500 grow border-white border-x h-10'
-      style={{height: props.num}}
+      style={{height: (window.innerHeight * .7) * (props.num / props.max)}}
       variants={{unselected, selected}}
       animate={props.isSelected ? selected : unselected}
     >
@@ -208,13 +208,13 @@ export default function Home() {
   const [delay, setDelay] = useState(10);
   const [playbackRate, setPlaybackRate] = useState(0.1)
 
-  const [cellList, setCellList] = useState(intList.map((num, key) => {return (<Cell isSelected={selectedKey[0] == key || selectedKey[1] == key ? true : false} thisKey={key} key={num} num={num}/>)}))
+  const [cellList, setCellList] = useState(intList.map((num, key) => {return (<Cell isSelected={selectedKey[0] == key || selectedKey[1] == key ? true : false} thisKey={key} key={num} num={num} max={listLen}/>)}))
 
   const [playPipe] = useSound('/sfx/fart-small.mp3', {volume: 0.5, playbackRate});
   const [playFart] = useSound('/sfx/pop.mp3', {volume: 0.5, playbackRate});
 
   useEffect(() => {
-    setCellList(intList.map((num, key) => <Cell isSelected={selectedKey[0] == key || selectedKey[1] == key ? true : false} key={num} thisKey={key} num={num}/>))
+    setCellList(intList.map((num, key) => <Cell isSelected={selectedKey[0] == key || selectedKey[1] == key ? true : false} key={num} thisKey={key} num={num} max={listLen}/>))
   }, [intList, selectedKey])
 
   useEffect(() => {
@@ -230,7 +230,7 @@ export default function Home() {
   return (
     <main>
       <div className='bg-container'>
-        <div className='flex space-x-2 w-[65vw] mb-2'>
+        <div className='flex md:space-x-2 flex-wrap basis-full md:w-[65vw] w-[100%] mb-2'>
           <button 
             onClick={() => {
               clearTimeouts(); 
@@ -275,15 +275,21 @@ export default function Home() {
             Merge Sort
           </button>
           
-          <button onClick={() => console.log(intList)} className='myButton'>Verify</button>
           <button onClick={() => {playFart()}} className='myButton grow'>Test Sound</button>
         
         </div>
-        <div className='flex space-x-2 w-[65vw]'>
-          <label className='myButton grow'>Delay (ms):</label>
-          <input className='p-3 grow' onChange={(event) => setDelay(Number(event.target.value))} value={delay}></input>
-          <label className='myButton grow'>Num columns:</label>
-          <input className='p-3 grow' onChange={(event) => setListLen(Number(event.target.value))} value={listLen}></input>
+        <div className='flex md:space-x-2 flex-wrap md:w-[65vw] w-[100%]'>
+
+          <label className='myButton md:w-auto w-[50%] grow'>Delay (ms):</label>
+          <input className='p-3 md:w-auto w-[50%] grow' value={delay} type='number' min={5} max={10000} onChange={
+            (event) => setDelay(Number(event.target.value))
+          }></input>
+          
+          <label className='myButton md:w-auto w-[50%] grow'>Num columns:</label>
+          <input className='p-3 md:w-auto w-[50%] grow' value={listLen} type='number' min={5} max={200} onChange={
+            (event) => setListLen(Number(event.target.value))
+          }></input>
+
         </div>
         <ColumnCellContainer cellList={cellList}/>
       </div>
