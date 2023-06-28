@@ -281,7 +281,7 @@ export default function Home() {
             Merge Sort
           </button>
 
-          <button 
+          {/* <button 
             onClick={() => {
               clearTimeouts(); 
               setSelectedKey([-1, -1]); 
@@ -290,7 +290,7 @@ export default function Home() {
               className='myButton grow'
           >
             QuickSort
-          </button>
+          </button> */}
           
           <button onClick={() => {playFart()}} className='myButton grow'>Test Sound</button>
         
