@@ -179,7 +179,7 @@ const Cell = (props:any) => {
       layout
       transition={{layout: {type: 'just', stiffness: 50, duration: 0.1}, backgroundColor: {type: 'just', duration: 0.001}}}
       className='bg-slate-500 grow border-white border-x h-10'
-      style={{height: (props.windowHeight * .7) * (props.num / props.max)}}
+      style={{height: (props.windowHeight * .6) * (props.num / props.max)}}
       variants={{unselected, selected}}
       animate={props.isSelected ? selected : unselected}
     >
