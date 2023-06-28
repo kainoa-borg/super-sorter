@@ -179,7 +179,7 @@ const Cell = (props:any) => {
       layout
       transition={{layout: {type: 'just', stiffness: 50, duration: 0.1}, backgroundColor: {type: 'just', duration: 0.001}}}
       className='bg-slate-500 grow border-white border-x h-10'
-      style={{height: (window.innerHeight * .7) * (props.num / props.max)}}
+      style={{height: (props.windowHeight * .7) * (props.num / props.max)}}
       variants={{unselected, selected}}
       animate={props.isSelected ? selected : unselected}
     >
@@ -207,14 +207,15 @@ export default function Home() {
   const [selectedKey, setSelectedKey] = useState([-1, -1]);
   const [delay, setDelay] = useState(10);
   const [playbackRate, setPlaybackRate] = useState(0.1)
+  const [windowHeight, setWindowHeight] = useState(0);
 
-  const [cellList, setCellList] = useState(intList.map((num, key) => {return (<Cell isSelected={selectedKey[0] == key || selectedKey[1] == key ? true : false} thisKey={key} key={num} num={num} max={listLen}/>)}))
+  const [cellList, setCellList] = useState(intList.map((num, key) => {return (<Cell isSelected={selectedKey[0] == key || selectedKey[1] == key ? true : false} thisKey={key} key={num} num={num} max={listLen} windowHeight={windowHeight}/>)}))
 
   const [playPipe] = useSound('/sfx/fart-small.mp3', {volume: 0.5, playbackRate});
   const [playFart] = useSound('/sfx/pop.mp3', {volume: 0.5, playbackRate});
 
   useEffect(() => {
-    setCellList(intList.map((num, key) => <Cell isSelected={selectedKey[0] == key || selectedKey[1] == key ? true : false} key={num} thisKey={key} num={num} max={listLen}/>))
+    setCellList(intList.map((num, key) => <Cell isSelected={selectedKey[0] == key || selectedKey[1] == key ? true : false} key={num} thisKey={key} num={num} max={listLen} windowHeight={windowHeight}/>))
   }, [intList, selectedKey])
 
   useEffect(() => {
@@ -226,6 +227,10 @@ export default function Home() {
   useEffect(() => {
     setPlaybackRate(((typeof(intList[selectedKey[1]])=='number' ? intList[selectedKey[1]]/listLen*.1 : 1) + .01))
   }, [selectedKey[1]])
+
+  useEffect(() => {
+    setWindowHeight(window.innerHeight);
+  }, [])
 
   return (
     <main>
