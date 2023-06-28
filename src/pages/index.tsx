@@ -7,6 +7,7 @@ import { randomInt } from 'crypto'
 import {shuffle} from 'lodash'
 import useSound from 'use-sound'
 import { list } from 'postcss'
+import { arrayBuffer } from 'stream/consumers'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -88,8 +89,8 @@ const merge = async (sortedList:Array<number>, setListToSort:any, setSelectedKey
   let i = 0, j = 0, k = l;
   let n1 = m - l + 1;
   let n2 = r - m;
-  let L:Array<number> = []
-  let R:Array<number> = []
+  let L:Array<number> = Array(n1)
+  let R:Array<number> = Array(n2)
   for (let x = 0; x < n1; x++) {
     L[x] = sortedList[l + x];
   }
@@ -128,13 +129,15 @@ const merge = async (sortedList:Array<number>, setListToSort:any, setSelectedKey
     await sleep (delay);
     setListToSort(sortedList);
     j += 1;
-    k += 1
+    k += 1;
   }
 }
 
 const mergeSortRecursive = async (sortedList:Array<number>, setListToSort:any, setSelectedKey:any, l:number, r:number, delay:number, sfx:any) => {
   if (l < r) {
     let m = l + Math.floor((r - l) / 2);
+
+    console.log([l, r])
 
     await mergeSortRecursive(sortedList, setListToSort, setSelectedKey, l, m, delay, sfx);
     await mergeSortRecursive(sortedList, setListToSort, setSelectedKey, m + 1, r, delay, sfx);
@@ -143,11 +146,9 @@ const mergeSortRecursive = async (sortedList:Array<number>, setListToSort:any, s
   }
 }
 
-const mergeSort = async (listToSort:Array<number>, setListToSort:any, setSelectedKey:any, n:any, delay:number, sfx:any) => {
-  console.log('beginning');
+const mergeSort = async (listToSort:Array<number>, setListToSort:any, setSelectedKey:any, n:number, delay:number, sfx:any) => {
   let sortedList = [...listToSort];
-  await mergeSortRecursive(sortedList, setListToSort, setSelectedKey, 0, n, delay, sfx)
-  setListToSort(sortedList.slice(1, n))
+  await mergeSortRecursive(sortedList, setListToSort, setSelectedKey, 0, n-1, delay, sfx)
   await sleep(250);
   for (let i = 0; i < n; i++) {
     setSelectedKey([-1, i]);
@@ -278,6 +279,17 @@ export default function Home() {
               className='myButton grow'
           >
             Merge Sort
+          </button>
+
+          <button 
+            onClick={() => {
+              clearTimeouts(); 
+              setSelectedKey([-1, -1]); 
+              quickSort(intList, setIntList, setSelectedKey, listLen, delay, playFart)}
+            } 
+              className='myButton grow'
+          >
+            QuickSort
           </button>
           
           <button onClick={() => {playFart()}} className='myButton grow'>Test Sound</button>
