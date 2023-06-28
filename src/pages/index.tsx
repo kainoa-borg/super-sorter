@@ -208,7 +208,7 @@ export default function Home() {
   const [delay, setDelay] = useState(10);
   const [playbackRate, setPlaybackRate] = useState(0.1)
 
-  const [cellList, setCellList] = useState(shuffle(intList).map((num, key) => {return (<Cell isSelected={selectedKey[0] == key || selectedKey[1] == key ? true : false} thisKey={key} num={num}/>)}))
+  const [cellList, setCellList] = useState(intList.map((num, key) => {return (<Cell isSelected={selectedKey[0] == key || selectedKey[1] == key ? true : false} thisKey={key} key={num} num={num}/>)}))
 
   const [playPipe] = useSound('/sfx/fart-small.mp3', {volume: 0.5, playbackRate});
   const [playFart] = useSound('/sfx/pop.mp3', {volume: 0.5, playbackRate});
