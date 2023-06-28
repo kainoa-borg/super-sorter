@@ -211,8 +211,8 @@ export default function Home() {
 
   const [cellList, setCellList] = useState(intList.map((num, key) => {return (<Cell isSelected={selectedKey[0] == key || selectedKey[1] == key ? true : false} thisKey={key} key={num} num={num} max={listLen} windowHeight={windowHeight}/>)}))
 
-  const [playPipe] = useSound('/sfx/fart-small.mp3', {volume: 0.5, playbackRate});
-  const [playFart] = useSound('/sfx/pop.mp3', {volume: 0.5, playbackRate});
+  const [playPipe] = useSound('./sfx/fart-small.mp3', {volume: 0.5, playbackRate});
+  const [playFart] = useSound('./sfx/pop.mp3', {volume: 0.5, playbackRate});
 
   useEffect(() => {
     setCellList(intList.map((num, key) => <Cell isSelected={selectedKey[0] == key || selectedKey[1] == key ? true : false} key={num} thisKey={key} num={num} max={listLen} windowHeight={windowHeight}/>))
