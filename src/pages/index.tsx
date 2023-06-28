@@ -1,117 +1,291 @@
-import Image from 'next/image'
+import Image from 'next/image' 
 import { Inter } from 'next/font/google'
+import { motion, AnimatePresence } from 'framer-motion'
+import { ReactEventHandler, useEffect, useState } from 'react'
+import React from 'react'
+import { randomInt } from 'crypto'
+import {shuffle} from 'lodash'
+import useSound from 'use-sound'
+import { list } from 'postcss'
 
 const inter = Inter({ subsets: ['latin'] })
 
-export default function Home() {
+// Helper Variables
+var timeouts:Array<any> = []
+
+// Helper Functions
+
+const clearTimeouts = () => {
+  timeouts.forEach((timeout) => {
+    clearTimeout(timeout)
+  })
+}
+
+async function sleep(ms:number) {
+  return new Promise((res) => {
+    timeouts.push(setTimeout(res, ms));
+  })
+}
+
+const swapIndices = (listToSwap:Array<number>, a:number, b:number):Array<number> => {
+  let newList = [...listToSwap];
+  let temp = newList[a];
+  newList[a] = newList[b];
+  newList[b] = temp;
+
+  return newList;
+}
+
+const bubbleSort = async (listToSort:Array<number>, setListToSort:any, n:number, setSelectedKey:any, delay:number, sfx:any) => {
+  let swapped:boolean = false;
+  for (let i = 1; i < n; i++) {
+      setSelectedKey([i, i-1])
+      if (listToSort[i] < listToSort[i-1]) {
+        listToSort = swapIndices(listToSort, i, i-1)
+        setListToSort(listToSort);
+        swapped = true;
+      }
+      await sleep(delay);
+      sfx();
+  }
+    if (swapped) 
+      bubbleSort(listToSort, setListToSort, n, setSelectedKey, delay, sfx);
+    else {
+      await sleep(250);
+      for (let i = 0; i < n; i++) {
+        setSelectedKey([-1, i]);
+        sfx();
+        await sleep(delay*2);
+      }
+    }
+}
+
+const selectionSort = async (listToSort:Array<number>, setListToSort:any, n:number, setSelectedKey:any, delay:number, sfx:any) => {
+  for (let i = 0; i < n; i++) {
+    let min = i;
+    for (let j = i; j < n; j++) {
+          setSelectedKey([i, j])
+          if (listToSort[j] < listToSort[min]) {
+            min = j;
+          }
+          await sleep(delay)
+          sfx();
+    }
+    if (min != i) {
+      listToSort = swapIndices(listToSort, i, min);
+      setListToSort(listToSort);
+    }        
+  }
+  await sleep(250);
+  for (let i = 0; i < n; i++) {
+    setSelectedKey([-1, i]);
+    sfx();
+    await sleep(delay*2);
+  }
+}
+
+const merge = async (sortedList:Array<number>, setListToSort:any, setSelectedKey:any, l:number, m:number, r:number, delay:number, sfx:any) => {
+  let i = 0, j = 0, k = l;
+  let n1 = m - l + 1;
+  let n2 = r - m;
+  let L:Array<number> = []
+  let R:Array<number> = []
+  for (let x = 0; x < n1; x++) {
+    L[x] = sortedList[l + x];
+  }
+  for (let y = 0; y < n2; y++) {
+    R[y] = sortedList[m + 1 + y];
+  }
+  while(i < n1 && j < n2) {
+    if (L[i] <= R[j]) {
+      sortedList[k] = L[i];
+      i += 1;
+    }
+    else {
+      sortedList[k] = R[j];
+      j += 1;
+    }
+    setSelectedKey([-1, k])
+    sfx();
+    await sleep (delay);
+    setListToSort(sortedList);
+    k += 1
+  }
+
+  while(i < n1) {
+    sortedList[k] = L[i];
+    setSelectedKey([-1, k]);
+    sfx();
+    await sleep (delay);
+    setListToSort(sortedList);
+    i += 1;
+    k += 1;
+  }
+  while(j < n2) {
+    sortedList[k] = R[j];
+    setSelectedKey([-1, k])
+    sfx();
+    await sleep (delay);
+    setListToSort(sortedList);
+    j += 1;
+    k += 1
+  }
+}
+
+const mergeSortRecursive = async (sortedList:Array<number>, setListToSort:any, setSelectedKey:any, l:number, r:number, delay:number, sfx:any) => {
+  if (l < r) {
+    let m = l + Math.floor((r - l) / 2);
+
+    await mergeSortRecursive(sortedList, setListToSort, setSelectedKey, l, m, delay, sfx);
+    await mergeSortRecursive(sortedList, setListToSort, setSelectedKey, m + 1, r, delay, sfx);
+
+    await merge(sortedList, setListToSort, setSelectedKey, l, m, r, delay, sfx)
+  }
+}
+
+const mergeSort = async (listToSort:Array<number>, setListToSort:any, setSelectedKey:any, n:any, delay:number, sfx:any) => {
+  console.log('beginning');
+  let sortedList = [...listToSort];
+  await mergeSortRecursive(sortedList, setListToSort, setSelectedKey, 0, n, delay, sfx)
+  setListToSort(sortedList.slice(1, n))
+  await sleep(250);
+  for (let i = 0; i < n; i++) {
+    setSelectedKey([-1, i]);
+    sfx();
+    await sleep(delay*2);
+  }
+}
+
+const randomIntList = (n:number, max:number=1000):Array<number> => {
+  let list = []
+  for (let i = 1; i < n + 1; i++) {
+    list.push(i * 5);
+  }
+  return list;
+}
+
+// Data
+const unselected = {
+  backgroundColor: '#64748B'
+}
+const selected = {
+  backgroundColor: '#3bc46f'
+}
+
+// Components
+const Cell = (props:any) => {
   return (
-    <main
-      className={`flex min-h-screen flex-col items-center justify-between p-24 ${inter.className}`}
+    <motion.div key={props.num}
+      layout
+      transition={{layout: {type: 'just', stiffness: 50, duration: 0.1}, backgroundColor: {type: 'just', duration: 0.001}}}
+      className='bg-slate-500 grow border-white border-x h-10'
+      style={{height: props.num}}
+      variants={{unselected, selected}}
+      animate={props.isSelected ? selected : unselected}
     >
-      <div className="z-10 w-full max-w-5xl items-center justify-between font-mono text-sm lg:flex">
-        <p className="fixed left-0 top-0 flex w-full justify-center border-b border-gray-300 bg-gradient-to-b from-zinc-200 pb-6 pt-8 backdrop-blur-2xl dark:border-neutral-800 dark:bg-zinc-800/30 dark:from-inherit lg:static lg:w-auto  lg:rounded-xl lg:border lg:bg-gray-200 lg:p-4 lg:dark:bg-zinc-800/30">
-          Get started by editing&nbsp;
-          <code className="font-mono font-bold">src/pages/index.tsx</code>
-        </p>
-        <div className="fixed bottom-0 left-0 flex h-48 w-full items-end justify-center bg-gradient-to-t from-white via-white dark:from-black dark:via-black lg:static lg:h-auto lg:w-auto lg:bg-none">
-          <a
-            className="pointer-events-none flex place-items-center gap-2 p-8 lg:pointer-events-auto lg:p-0"
-            href="https://vercel.com?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+    </motion.div>
+  )
+}
+
+const ColumnCellContainer = (props:any) => {
+  return (
+    <div className='flex absolute bottom-0 items-end w-[100vw]'>
+      {/* <AnimatePresence> */}
+        {props.cellList}
+      {/* </AnimatePresence> */}
+    </div>
+  )
+}
+
+// Main
+export default function Home() {
+
+  const [isVisible, setVisible] = useState(false);
+  const [scaleTest, setScaleTest] = useState(false);
+  const [listLen, setListLen] = useState(20); 
+  const [intList, setIntList] = useState(shuffle(randomIntList(listLen)));
+  const [selectedKey, setSelectedKey] = useState([-1, -1]);
+  const [delay, setDelay] = useState(10);
+  const [playbackRate, setPlaybackRate] = useState(0.1)
+
+  const [cellList, setCellList] = useState(shuffle(intList).map((num, key) => {return (<Cell isSelected={selectedKey[0] == key || selectedKey[1] == key ? true : false} thisKey={key} num={num}/>)}))
+
+  const [playPipe] = useSound('/sfx/fart-small.mp3', {volume: 0.5, playbackRate});
+  const [playFart] = useSound('/sfx/pop.mp3', {volume: 0.5, playbackRate});
+
+  useEffect(() => {
+    setCellList(intList.map((num, key) => <Cell isSelected={selectedKey[0] == key || selectedKey[1] == key ? true : false} key={num} thisKey={key} num={num}/>))
+  }, [intList, selectedKey])
+
+  useEffect(() => {
+    clearTimeouts();
+    setSelectedKey([-1, -1]);
+    setIntList(randomIntList(listLen));
+  }, [listLen, delay])
+
+  useEffect(() => {
+    setPlaybackRate(((typeof(intList[selectedKey[1]])=='number' ? intList[selectedKey[1]]/listLen*.1 : 1) + .01))
+  }, [selectedKey[1]])
+
+  return (
+    <main>
+      <div className='bg-container'>
+        <div className='flex space-x-2 w-[65vw] mb-2'>
+          <button 
+            onClick={() => {
+              clearTimeouts(); 
+              setSelectedKey([-1, -1]); 
+              setIntList(shuffle(randomIntList(listLen)))}
+            } 
+            className='myButton grow'
           >
-            By{' '}
-            <Image
-              src="/vercel.svg"
-              alt="Vercel Logo"
-              className="dark:invert"
-              width={100}
-              height={24}
-              priority
-            />
-          </a>
+            Shuffle
+          </button>
+          
+          <button 
+            onClick={() => {
+              clearTimeouts(); 
+              setSelectedKey([-1, -1]); 
+              bubbleSort(intList, setIntList, listLen, setSelectedKey, delay, playFart)}
+              } 
+            className='myButton grow'
+          >
+              Bubble Sort
+          </button>
+          
+          <button 
+            onClick={() => {
+              clearTimeouts(); 
+              setSelectedKey([-1, -1]); 
+              selectionSort(intList, setIntList, listLen, setSelectedKey, delay, playFart)}
+            } 
+            className='myButton grow'
+          >
+            Selection Sort
+          </button>
+          
+          <button 
+            onClick={() => {
+              clearTimeouts(); 
+              setSelectedKey([-1, -1]); 
+              mergeSort(intList, setIntList, setSelectedKey, listLen, delay, playFart)}
+            } 
+              className='myButton grow'
+          >
+            Merge Sort
+          </button>
+          
+          <button onClick={() => console.log(intList)} className='myButton'>Verify</button>
+          <button onClick={() => {playFart()}} className='myButton grow'>Test Sound</button>
+        
         </div>
-      </div>
-
-      <div className="relative flex place-items-center before:absolute before:h-[300px] before:w-[480px] before:-translate-x-1/2 before:rounded-full before:bg-gradient-radial before:from-white before:to-transparent before:blur-2xl before:content-[''] after:absolute after:-z-20 after:h-[180px] after:w-[240px] after:translate-x-1/3 after:bg-gradient-conic after:from-sky-200 after:via-blue-200 after:blur-2xl after:content-[''] before:dark:bg-gradient-to-br before:dark:from-transparent before:dark:to-blue-700/10 after:dark:from-sky-900 after:dark:via-[#0141ff]/40 before:lg:h-[360px]">
-        <Image
-          className="relative dark:drop-shadow-[0_0_0.3rem_#ffffff70] dark:invert"
-          src="/next.svg"
-          alt="Next.js Logo"
-          width={180}
-          height={37}
-          priority
-        />
-      </div>
-
-      <div className="mb-32 grid text-center lg:mb-0 lg:grid-cols-4 lg:text-left">
-        <a
-          href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Docs{' '}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Find in-depth information about Next.js features and API.
-          </p>
-        </a>
-
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Learn{' '}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Learn about Next.js in an interactive course with&nbsp;quizzes!
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Templates{' '}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Discover and deploy boilerplate example Next.js&nbsp;projects.
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/new?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Deploy{' '}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Instantly deploy your Next.js site to a shareable URL with Vercel.
-          </p>
-        </a>
+        <div className='flex space-x-2 w-[65vw]'>
+          <label className='myButton grow'>Delay (ms):</label>
+          <input className='p-3 grow' onChange={(event) => setDelay(Number(event.target.value))} value={delay}></input>
+          <label className='myButton grow'>Num columns:</label>
+          <input className='p-3 grow' onChange={(event) => setListLen(Number(event.target.value))} value={listLen}></input>
+        </div>
+        <ColumnCellContainer cellList={cellList}/>
       </div>
     </main>
   )
